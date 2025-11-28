@@ -169,6 +169,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingSave, setPendingSave] = useState(null);
 
+  // Auto-inject Tailwind CSS
   useEffect(() => {
     const scriptId = 'tailwind-script';
     if (!document.getElementById(scriptId)) {
@@ -221,8 +222,8 @@ export default function App() {
   };
 
   return (
-    // Full screen container with no margins
-    <div className="h-screen bg-gray-50 flex flex-col font-sans text-gray-800 w-full overflow-hidden relative">
+    // FIX: Using 'fixed inset-0' forces the app to fill the entire screen on mobile
+    <div className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col font-sans text-gray-800 overflow-hidden">
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -232,7 +233,7 @@ export default function App() {
       `}</style>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 relative">
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 relative w-full">
         {activeTab === 'standard' && (
           <StandardCalculator onSave={handleInitiateSave} />
         )}
@@ -252,7 +253,7 @@ export default function App() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="bg-white border-t border-gray-200 px-6 py-2 flex justify-between items-center pb-6 sticky bottom-0 z-20 shrink-0">
+      <div className="bg-white border-t border-gray-200 px-6 py-2 flex justify-between items-center pb-6 sticky bottom-0 z-20 shrink-0 w-full">
         <NavButton
           active={activeTab === 'standard'}
           onClick={() => setActiveTab('standard')}
@@ -280,7 +281,7 @@ const SaveModal = ({ onConfirm, onCancel }) => {
   const [name, setName] = useState('');
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl mx-4">
         <h3 className="text-lg font-bold text-gray-900 mb-2">Save Result</h3>
         <p className="text-sm text-gray-500 mb-4">
@@ -395,9 +396,9 @@ const StandardCalculator = ({ onSave }) => {
   };
 
   return (
-    // Full width container with no internal padding
+    // FULL WIDTH FIX: Ensure this container takes 100% width
     <div className="flex flex-col h-full w-full">
-      {/* Display Section: Rectangular, Full Width */}
+      {/* Display Section */}
       <div className="flex-1 flex flex-col justify-end items-end mb-0 space-y-1 bg-white p-6 pb-4 border-b border-gray-100 w-full">
         <div
           className={`text-right font-light text-gray-800 break-all transition-all ${
@@ -411,21 +412,21 @@ const StandardCalculator = ({ onSave }) => {
         </div>
       </div>
 
-      {/* Button Grid: Removed p-2 to make it edge-to-edge */}
-      <div className="grid grid-cols-4 gap-0.5 h-[60%] bg-gray-100">
+      {/* Button Grid: gap-0.5 for tight grid, w-full for full width */}
+      <div className="grid grid-cols-4 gap-px h-[60%] bg-gray-200 w-full border-t border-gray-200">
         <CalcBtn label="C" onClick={handleClear} color="red" />
         <CalcBtn
-          label={<IconUndo size={20} />}
+          label={<IconUndo size={22} />}
           onClick={handleUndo}
           color="gray"
         />
         <CalcBtn
-          label={<IconRedo size={20} />}
+          label={<IconRedo size={22} />}
           onClick={handleRedo}
           color="gray"
         />
         <CalcBtn
-          label={<IconDelete size={20} />}
+          label={<IconDelete size={22} />}
           onClick={handleBackspace}
           color="gray"
         />
@@ -452,16 +453,16 @@ const StandardCalculator = ({ onSave }) => {
           onClick={() => {
             if (preview) onSave(preview, 'Calculation');
           }}
-          className="bg-blue-600 text-white text-xl font-medium active:bg-blue-700 transition-colors flex items-center justify-center"
+          className="bg-blue-600 text-white text-xl font-medium active:bg-blue-700 transition-colors flex items-center justify-center h-full w-full"
         >
-          <IconSave size={24} />
+          <IconSave size={28} />
         </button>
       </div>
 
-      {/* Equal Button: Full width, rectangular */}
+      {/* Equal Button */}
       <button
         onClick={handleEqual}
-        className="w-full bg-gray-900 text-white py-5 font-bold text-2xl active:bg-gray-800 transition-all shrink-0"
+        className="w-full bg-gray-900 text-white py-6 font-bold text-3xl active:bg-gray-800 transition-all shrink-0"
       >
         =
       </button>
@@ -471,12 +472,11 @@ const StandardCalculator = ({ onSave }) => {
 
 const CalcBtn = ({ label, onClick, color = 'default' }) => {
   const baseClass =
-    'h-full text-2xl font-medium flex items-center justify-center active:opacity-75 select-none transition-colors';
-  // Removed rounding and adjusted colors for a grid look
+    'h-full w-full text-2xl font-medium flex items-center justify-center active:opacity-75 select-none transition-colors';
   const colors = {
     default: 'bg-white text-gray-900',
     blue: 'bg-blue-50 text-blue-600 font-bold',
-    gray: 'bg-gray-100 text-gray-600',
+    gray: 'bg-gray-50 text-gray-600',
     red: 'bg-red-50 text-red-500',
   };
 
@@ -518,8 +518,8 @@ const CashTallyCalculator = ({ onSave }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-32">
+    <div className="flex flex-col h-full bg-gray-50 w-full">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-32 w-full">
         {denominations.map((denom) => {
           const count = counts[denom];
           const subtotal = (parseInt(count) || 0) * denom;
@@ -528,7 +528,7 @@ const CashTallyCalculator = ({ onSave }) => {
               key={denom}
               className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 animate-in slide-in-from-bottom-2 duration-300"
             >
-              <div className="w-16 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-700 font-bold font-mono border border-gray-200 shadow-inner">
+              <div className="w-16 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-700 font-bold font-mono border border-gray-200 shadow-inner shrink-0">
                 ₹{denom}
               </div>
               <div className="flex-1 flex items-center text-gray-400 font-medium text-sm">
@@ -541,7 +541,7 @@ const CashTallyCalculator = ({ onSave }) => {
                   className="w-full bg-gray-50 border-b-2 border-transparent focus:border-blue-500 outline-none text-2xl text-gray-900 font-medium py-1 px-2 transition-colors placeholder-gray-200"
                 />
               </div>
-              <div className="w-24 text-right font-bold text-gray-900 text-lg">
+              <div className="w-24 text-right font-bold text-gray-900 text-lg shrink-0">
                 {subtotal > 0 ? `₹${subtotal.toLocaleString()}` : '-'}
               </div>
             </div>
@@ -549,7 +549,7 @@ const CashTallyCalculator = ({ onSave }) => {
         })}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-3xl z-10">
+      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-3xl z-10 w-full">
         <div className="flex justify-between items-end mb-4 px-2">
           <div>
             <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">
@@ -582,7 +582,7 @@ const CashTallyCalculator = ({ onSave }) => {
 const SavedList = ({ items, onDelete }) => {
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400 w-full">
         <IconHistory size={48} className="mb-4 opacity-20" />
         <p>No saved items yet.</p>
       </div>
@@ -590,11 +590,11 @@ const SavedList = ({ items, onDelete }) => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-24">
+    <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-24 w-full">
       {items.map((item) => (
         <div
           key={item.id}
-          className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center group"
+          className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center group w-full"
         >
           <div>
             <h3 className="font-bold text-gray-800">{item.name}</h3>
