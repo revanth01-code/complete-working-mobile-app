@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // --- Icons (Built-in) ---
 const IconCalculator = ({ size = 24, className = '' }) => (
@@ -76,22 +76,6 @@ const IconSave = ({ size = 24, className = '' }) => (
     <path d="M7 3v5h8" />
   </svg>
 );
-const IconRotateCcw = ({ size = 24, className = '' }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12" />
-    <path d="M3 3v9h9" />
-  </svg>
-);
 const IconTrash2 = ({ size = 24, className = '' }) => (
   <svg
     width={size}
@@ -129,6 +113,55 @@ const IconRefreshCw = ({ size = 24, className = '' }) => (
     <path d="M8 16H3v5" />
   </svg>
 );
+const IconDelete = ({ size = 24, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" />
+    <line x1="18" y1="9" x2="12" y2="15" />
+    <line x1="12" y1="9" x2="18" y2="15" />
+  </svg>
+);
+const IconUndo = ({ size = 24, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M9 14 4 9l5-5" />
+    <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+  </svg>
+);
+const IconRedo = ({ size = 24, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="m15 14 5-5-5-5" />
+    <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
+  </svg>
+);
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('standard');
@@ -138,7 +171,6 @@ export default function App() {
   const [pendingSave, setPendingSave] = useState(null);
 
   // --- AUTO-FIX: Inject Tailwind CSS ---
-  // This forces the design engine to load if it's missing
   useEffect(() => {
     const scriptId = 'tailwind-script';
     if (!document.getElementById(scriptId)) {
@@ -193,14 +225,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 max-w-md mx-auto shadow-2xl overflow-hidden relative">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 w-full max-w-md mx-auto shadow-2xl overflow-hidden relative">
       {/* --- Internal CSS --- */}
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        body { -webkit-tap-highlight-color: transparent; }
+        body { -webkit-tap-highlight-color: transparent; background-color: #f9fafb; }
       `}</style>
 
       {/* Main Content Area */}
@@ -259,7 +291,7 @@ const SaveModal = ({ onConfirm, onCancel }) => {
       <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
         <h3 className="text-lg font-bold text-gray-900 mb-2">Save Result</h3>
         <p className="text-sm text-gray-500 mb-4">
-          Give this calculation a name.
+          Give this calculation a name (e.g., "Shop Closing").
         </p>
 
         <input
@@ -305,57 +337,117 @@ const NavButton = ({ active, onClick, icon, label }) => (
 const StandardCalculator = ({ onSave }) => {
   const [display, setDisplay] = useState('0');
   const [equation, setEquation] = useState('');
+  const [waitingForNewNumber, setWaitingForNewNumber] = useState(true); // New flag to handle replacing 0
+  const [history, setHistory] = useState([{ display: '0', equation: '' }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
-  const handleNum = (num) => {
-    if (display === '0') setDisplay(num);
-    else setDisplay(display + num);
-  };
-
-  const handleOp = (op) => {
-    setEquation(display + ' ' + op + ' ');
-    setDisplay('0');
-  };
-
-  const calculate = () => {
+  // Helper to safely calculate string equations
+  const safeCalculate = (eq) => {
     try {
-      const fullEq = equation + display;
-      if (
-        !/^[0-9+\-*/. ()]+$/.test(
-          fullEq.replace('×', '*').replace('÷', '/').replace(/\s/g, '')
-        )
-      ) {
-        if (!isNaN(parseFloat(display))) return display;
-        return null;
-      }
+      const cleanEq = eq.replace(/[+\-*/]$/, '');
+      if (!cleanEq) return '0';
+      // eslint-disable-next-line no-new-func
       const result = new Function(
-        'return ' + fullEq.replace('×', '*').replace('÷', '/')
+        'return ' + cleanEq.replace('×', '*').replace('÷', '/')
       )();
-      const formattedResult = Number(result).toFixed(2).replace(/\.00$/, '');
-      setDisplay(formattedResult);
-      setEquation('');
-      return formattedResult;
+      if (!isFinite(result) || isNaN(result)) return 'Error';
+      const formatted = Number(result).toFixed(2).replace(/\.00$/, '');
+      return formatted;
     } catch (e) {
-      setDisplay('Error');
-      return null;
+      return 'Error';
     }
   };
 
+  const updateState = (newDisplay, newEquation) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push({ display: newDisplay, equation: newEquation });
+    if (newHistory.length > 20) newHistory.shift();
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+
+    setDisplay(newDisplay);
+    setEquation(newEquation);
+  };
+
+  const handleNum = (num) => {
+    let newVal;
+    if (waitingForNewNumber || display === '0' || display === 'Error') {
+      newVal = num;
+      setWaitingForNewNumber(false);
+    } else {
+      newVal = display + num;
+    }
+    updateState(newVal, equation);
+  };
+
+  const handleOp = (op) => {
+    let currentEq = equation;
+    let currentDisplay = display;
+
+    // Check if we are chaining operations (e.g. 5 + 3 + )
+    if (equation && !waitingForNewNumber) {
+      // Calculate intermediate result
+      const result = safeCalculate(equation + display);
+      currentEq = result + ' ' + op + ' ';
+      currentDisplay = result; // SHOW RESULT instead of 0
+    } else if (waitingForNewNumber && equation) {
+      // Just changing the operator (e.g. 5 + then press -)
+      currentEq = equation.replace(/[+\-*/]\s*$/, op + ' ');
+      // currentDisplay remains whatever it is
+    } else {
+      // First operator (e.g. 5 +)
+      currentEq = display + ' ' + op + ' ';
+      // currentDisplay remains display
+    }
+
+    setWaitingForNewNumber(true); // Ensure next number starts fresh
+    updateState(currentDisplay, currentEq);
+  };
+
+  const calculateFinal = () => {
+    const fullEq = equation + display;
+    const result = safeCalculate(fullEq);
+    setWaitingForNewNumber(true);
+    updateState(result, '');
+    return result;
+  };
+
   const handleClear = () => {
-    setDisplay('0');
-    setEquation('');
+    setWaitingForNewNumber(true);
+    updateState('0', '');
+  };
+
+  const handleBackspace = () => {
+    if (waitingForNewNumber) return; // Don't delete calculated result
+    if (display.length > 1) {
+      updateState(display.slice(0, -1), equation);
+    } else {
+      updateState('0', equation);
+      setWaitingForNewNumber(true);
+    }
   };
 
   const handleUndo = () => {
-    if (display.length > 1) {
-      setDisplay(display.slice(0, -1));
-    } else {
-      setDisplay('0');
+    if (historyIndex > 0) {
+      const prev = history[historyIndex - 1];
+      setHistoryIndex(historyIndex - 1);
+      setDisplay(prev.display);
+      setEquation(prev.equation);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const next = history[historyIndex + 1];
+      setHistoryIndex(historyIndex + 1);
+      setDisplay(next.display);
+      setEquation(next.equation);
     }
   };
 
   return (
     <div className="flex flex-col h-full p-6">
-      <div className="flex-1 flex flex-col justify-end items-end mb-6 space-y-2 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div className="flex-1 flex flex-col justify-end items-end mb-6 space-y-2 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 min-h-[140px]">
         <div className="text-gray-400 text-sm h-6">{equation}</div>
         <div className="text-5xl font-light text-gray-900 tracking-tighter break-all">
           {display}
@@ -363,44 +455,58 @@ const StandardCalculator = ({ onSave }) => {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
+        {/* Row 1: Editing Controls */}
         <CalcBtn label="C" onClick={handleClear} color="red" />
         <CalcBtn
-          label={<IconRotateCcw size={20} />}
+          label={<IconUndo size={20} />}
           onClick={handleUndo}
           color="gray"
         />
-        <CalcBtn label="%" onClick={() => handleOp('%')} color="gray" />
-        <CalcBtn label="÷" onClick={() => handleOp('/')} color="blue" />
+        <CalcBtn
+          label={<IconRedo size={20} />}
+          onClick={handleRedo}
+          color="gray"
+        />
+        <CalcBtn
+          label={<IconDelete size={20} />}
+          onClick={handleBackspace}
+          color="gray"
+        />
 
+        {/* Row 2 */}
         <CalcBtn label="7" onClick={() => handleNum('7')} />
         <CalcBtn label="8" onClick={() => handleNum('8')} />
         <CalcBtn label="9" onClick={() => handleNum('9')} />
-        <CalcBtn label="×" onClick={() => handleOp('*')} color="blue" />
+        <CalcBtn label="÷" onClick={() => handleOp('/')} color="blue" />
 
+        {/* Row 3 */}
         <CalcBtn label="4" onClick={() => handleNum('4')} />
         <CalcBtn label="5" onClick={() => handleNum('5')} />
         <CalcBtn label="6" onClick={() => handleNum('6')} />
-        <CalcBtn label="-" onClick={() => handleOp('-')} color="blue" />
+        <CalcBtn label="×" onClick={() => handleOp('*')} color="blue" />
 
+        {/* Row 4 */}
         <CalcBtn label="1" onClick={() => handleNum('1')} />
         <CalcBtn label="2" onClick={() => handleNum('2')} />
         <CalcBtn label="3" onClick={() => handleNum('3')} />
-        <CalcBtn label="+" onClick={() => handleOp('+')} color="blue" />
+        <CalcBtn label="-" onClick={() => handleOp('-')} color="blue" />
 
-        <CalcBtn label="0" onClick={() => handleNum('0')} span="col-span-2" />
+        {/* Row 5 */}
+        <CalcBtn label="0" onClick={() => handleNum('0')} />
         <CalcBtn label="." onClick={() => handleNum('.')} />
+        <CalcBtn label="+" onClick={() => handleOp('+')} color="blue" />
         <button
           onClick={() => {
-            const res = calculate();
-            if (res) onSave(res, 'Calculation');
+            const res = calculateFinal();
+            if (res && res !== 'Error') onSave(res, 'Calculation');
           }}
-          className="bg-blue-600 text-white rounded-2xl p-4 text-xl font-medium active:scale-95 transition-transform flex items-center justify-center shadow-lg shadow-blue-200"
+          className="bg-blue-600 text-white rounded-2xl text-xl font-medium active:scale-95 transition-transform flex items-center justify-center shadow-lg shadow-blue-200"
         >
           <IconSave size={24} />
         </button>
       </div>
       <button
-        onClick={calculate}
+        onClick={calculateFinal}
         className="mt-3 w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all"
       >
         =
