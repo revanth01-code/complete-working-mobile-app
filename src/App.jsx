@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // --- Icons (Built-in) ---
 const IconCalculator = ({ size = 24, className = '' }) => (
@@ -166,11 +166,9 @@ const IconRedo = ({ size = 24, className = '' }) => (
 export default function App() {
   const [activeTab, setActiveTab] = useState('standard');
   const [savedItems, setSavedItems] = useState([]);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingSave, setPendingSave] = useState(null);
 
-  // --- AUTO-FIX: Inject Tailwind CSS ---
   useEffect(() => {
     const scriptId = 'tailwind-script';
     if (!document.getElementById(scriptId)) {
@@ -181,7 +179,6 @@ export default function App() {
     }
   }, []);
 
-  // Load saved items
   useEffect(() => {
     const loadedItems = localStorage.getItem('calc_saved_items');
     if (loadedItems) {
@@ -189,7 +186,6 @@ export default function App() {
     }
   }, []);
 
-  // Save items
   useEffect(() => {
     localStorage.setItem('calc_saved_items', JSON.stringify(savedItems));
   }, [savedItems]);
@@ -225,18 +221,18 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 w-full max-w-md mx-auto shadow-2xl overflow-hidden relative">
-      {/* --- Internal CSS --- */}
+    // Changed h-screen to make it fill specific mobile viewport correctly
+    <div className="h-screen bg-gray-50 flex flex-col font-sans text-gray-800 w-full max-w-md mx-auto shadow-2xl overflow-hidden relative">
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        body { -webkit-tap-highlight-color: transparent; background-color: #f9fafb; }
+        body { -webkit-tap-highlight-color: transparent; background-color: #f9fafb; margin: 0; padding: 0; }
       `}</style>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 relative no-scrollbar pt-6">
+      {/* Main Content Area - Uses flex-1 to fill all available space */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 relative">
         {activeTab === 'standard' && (
           <StandardCalculator onSave={handleInitiateSave} />
         )}
@@ -248,7 +244,6 @@ export default function App() {
         )}
       </div>
 
-      {/* Save Name Modal */}
       {isModalOpen && (
         <SaveModal
           onConfirm={handleConfirmSave}
@@ -257,7 +252,7 @@ export default function App() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center pb-8 sticky bottom-0 z-20">
+      <div className="bg-white border-t border-gray-200 px-6 py-2 flex justify-between items-center pb-6 sticky bottom-0 z-20 shrink-0">
         <NavButton
           active={activeTab === 'standard'}
           onClick={() => setActiveTab('standard')}
@@ -281,38 +276,34 @@ export default function App() {
   );
 }
 
-// --- Sub Components ---
-
 const SaveModal = ({ onConfirm, onCancel }) => {
   const [name, setName] = useState('');
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
         <h3 className="text-lg font-bold text-gray-900 mb-2">Save Result</h3>
         <p className="text-sm text-gray-500 mb-4">
-          Give this calculation a name (e.g., "Shop Closing").
+          Give this calculation a name.
         </p>
-
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter name..."
-          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-lg mb-6 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-lg mb-6 outline-none focus:border-blue-500"
           autoFocus
         />
-
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+            className="flex-1 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100"
           >
             Cancel
           </button>
           <button
             onClick={() => onConfirm(name || 'Untitled')}
-            className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all"
+            className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95"
           >
             Save
           </button>
@@ -335,104 +326,60 @@ const NavButton = ({ active, onClick, icon, label }) => (
 );
 
 const StandardCalculator = ({ onSave }) => {
-  const [display, setDisplay] = useState('0');
-  const [equation, setEquation] = useState('');
-  const [waitingForNewNumber, setWaitingForNewNumber] = useState(true); // New flag to handle replacing 0
-  const [history, setHistory] = useState([{ display: '0', equation: '' }]);
+  // We use one string 'expression' to hold everything like "45+45"
+  const [expression, setExpression] = useState('');
+  const [preview, setPreview] = useState('');
+  const [history, setHistory] = useState(['']);
   const [historyIndex, setHistoryIndex] = useState(0);
 
-  // Helper to safely calculate string equations
-  const safeCalculate = (eq) => {
+  // Helper to calculate
+  const safeCalculate = (exp) => {
     try {
-      const cleanEq = eq.replace(/[+\-*/]$/, '');
-      if (!cleanEq) return '0';
+      // Clean string for eval
+      let clean = exp.replace(/×/g, '*').replace(/÷/g, '/');
+      // If ends with operator, trim it for preview
+      if (/[+\-*/.]$/.test(clean)) clean = clean.slice(0, -1);
+      if (!clean) return '';
       // eslint-disable-next-line no-new-func
-      const result = new Function(
-        'return ' + cleanEq.replace('×', '*').replace('÷', '/')
-      )();
-      if (!isFinite(result) || isNaN(result)) return 'Error';
-      const formatted = Number(result).toFixed(2).replace(/\.00$/, '');
-      return formatted;
+      const result = new Function('return ' + clean)();
+      if (!isFinite(result) || isNaN(result)) return '';
+      return Number(result).toFixed(2).replace(/\.00$/, '');
     } catch (e) {
-      return 'Error';
+      return '';
     }
   };
 
-  const updateState = (newDisplay, newEquation) => {
+  // Update logic with history
+  const updateExpression = (newExp) => {
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push({ display: newDisplay, equation: newEquation });
+    newHistory.push(newExp);
     if (newHistory.length > 20) newHistory.shift();
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
 
-    setDisplay(newDisplay);
-    setEquation(newEquation);
+    setExpression(newExp);
+    setPreview(safeCalculate(newExp));
   };
 
-  const handleNum = (num) => {
-    let newVal;
-    if (waitingForNewNumber || display === '0' || display === 'Error') {
-      newVal = num;
-      setWaitingForNewNumber(false);
-    } else {
-      newVal = display + num;
-    }
-    updateState(newVal, equation);
-  };
-
-  const handleOp = (op) => {
-    let currentEq = equation;
-    let currentDisplay = display;
-
-    // Check if we are chaining operations (e.g. 5 + 3 + )
-    if (equation && !waitingForNewNumber) {
-      // Calculate intermediate result
-      const result = safeCalculate(equation + display);
-      currentEq = result + ' ' + op + ' ';
-      currentDisplay = result; // SHOW RESULT instead of 0
-    } else if (waitingForNewNumber && equation) {
-      // Just changing the operator (e.g. 5 + then press -)
-      currentEq = equation.replace(/[+\-*/]\s*$/, op + ' ');
-      // currentDisplay remains whatever it is
-    } else {
-      // First operator (e.g. 5 +)
-      currentEq = display + ' ' + op + ' ';
-      // currentDisplay remains display
-    }
-
-    setWaitingForNewNumber(true); // Ensure next number starts fresh
-    updateState(currentDisplay, currentEq);
-  };
-
-  const calculateFinal = () => {
-    const fullEq = equation + display;
-    const result = safeCalculate(fullEq);
-    setWaitingForNewNumber(true);
-    updateState(result, '');
-    return result;
+  const handleInput = (val) => {
+    updateExpression(expression + val);
   };
 
   const handleClear = () => {
-    setWaitingForNewNumber(true);
-    updateState('0', '');
+    updateExpression('');
+    setPreview('');
   };
 
   const handleBackspace = () => {
-    if (waitingForNewNumber) return; // Don't delete calculated result
-    if (display.length > 1) {
-      updateState(display.slice(0, -1), equation);
-    } else {
-      updateState('0', equation);
-      setWaitingForNewNumber(true);
-    }
+    updateExpression(expression.slice(0, -1));
   };
 
   const handleUndo = () => {
     if (historyIndex > 0) {
       const prev = history[historyIndex - 1];
       setHistoryIndex(historyIndex - 1);
-      setDisplay(prev.display);
-      setEquation(prev.equation);
+      setExpression(prev);
+      setPreview(safeCalculate(prev));
     }
   };
 
@@ -440,22 +387,38 @@ const StandardCalculator = ({ onSave }) => {
     if (historyIndex < history.length - 1) {
       const next = history[historyIndex + 1];
       setHistoryIndex(historyIndex + 1);
-      setDisplay(next.display);
-      setEquation(next.equation);
+      setExpression(next);
+      setPreview(safeCalculate(next));
+    }
+  };
+
+  const handleEqual = () => {
+    if (preview && preview !== 'Error') {
+      updateExpression(preview);
+      setPreview('');
     }
   };
 
   return (
-    <div className="flex flex-col h-full p-6">
-      <div className="flex-1 flex flex-col justify-end items-end mb-6 space-y-2 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 min-h-[140px]">
-        <div className="text-gray-400 text-sm h-6">{equation}</div>
-        <div className="text-5xl font-light text-gray-900 tracking-tighter break-all">
-          {display}
+    <div className="flex flex-col h-full p-4 pb-0">
+      {/* Display Section - Flexible height to push buttons down */}
+      <div className="flex-1 flex flex-col justify-end items-end mb-4 space-y-1 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+        {/* Full Expression (Type here) */}
+        <div
+          className={`text-right font-light text-gray-800 break-all transition-all ${
+            expression.length > 10 ? 'text-3xl' : 'text-5xl'
+          }`}
+        >
+          {expression || '0'}
+        </div>
+        {/* Live Preview Result (Gray text below) */}
+        <div className="text-gray-400 text-2xl font-medium h-8">
+          {preview ? `= ${preview}` : ''}
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
-        {/* Row 1: Editing Controls */}
+      {/* Button Grid - Uses flex-grow to fill remaining height */}
+      <div className="grid grid-cols-4 gap-2 h-3/5 pb-2">
         <CalcBtn label="C" onClick={handleClear} color="red" />
         <CalcBtn
           label={<IconUndo size={20} />}
@@ -473,41 +436,38 @@ const StandardCalculator = ({ onSave }) => {
           color="gray"
         />
 
-        {/* Row 2 */}
-        <CalcBtn label="7" onClick={() => handleNum('7')} />
-        <CalcBtn label="8" onClick={() => handleNum('8')} />
-        <CalcBtn label="9" onClick={() => handleNum('9')} />
-        <CalcBtn label="÷" onClick={() => handleOp('/')} color="blue" />
+        <CalcBtn label="7" onClick={() => handleInput('7')} />
+        <CalcBtn label="8" onClick={() => handleInput('8')} />
+        <CalcBtn label="9" onClick={() => handleInput('9')} />
+        <CalcBtn label="÷" onClick={() => handleInput('÷')} color="blue" />
 
-        {/* Row 3 */}
-        <CalcBtn label="4" onClick={() => handleNum('4')} />
-        <CalcBtn label="5" onClick={() => handleNum('5')} />
-        <CalcBtn label="6" onClick={() => handleNum('6')} />
-        <CalcBtn label="×" onClick={() => handleOp('*')} color="blue" />
+        <CalcBtn label="4" onClick={() => handleInput('4')} />
+        <CalcBtn label="5" onClick={() => handleInput('5')} />
+        <CalcBtn label="6" onClick={() => handleInput('6')} />
+        <CalcBtn label="×" onClick={() => handleInput('×')} color="blue" />
 
-        {/* Row 4 */}
-        <CalcBtn label="1" onClick={() => handleNum('1')} />
-        <CalcBtn label="2" onClick={() => handleNum('2')} />
-        <CalcBtn label="3" onClick={() => handleNum('3')} />
-        <CalcBtn label="-" onClick={() => handleOp('-')} color="blue" />
+        <CalcBtn label="1" onClick={() => handleInput('1')} />
+        <CalcBtn label="2" onClick={() => handleInput('2')} />
+        <CalcBtn label="3" onClick={() => handleInput('3')} />
+        <CalcBtn label="-" onClick={() => handleInput('-')} color="blue" />
 
-        {/* Row 5 */}
-        <CalcBtn label="0" onClick={() => handleNum('0')} />
-        <CalcBtn label="." onClick={() => handleNum('.')} />
-        <CalcBtn label="+" onClick={() => handleOp('+')} color="blue" />
+        <CalcBtn label="0" onClick={() => handleInput('0')} />
+        <CalcBtn label="." onClick={() => handleInput('.')} />
+        <CalcBtn label="+" onClick={() => handleInput('+')} color="blue" />
         <button
           onClick={() => {
-            const res = calculateFinal();
-            if (res && res !== 'Error') onSave(res, 'Calculation');
+            if (preview) onSave(preview, 'Calculation');
           }}
           className="bg-blue-600 text-white rounded-2xl text-xl font-medium active:scale-95 transition-transform flex items-center justify-center shadow-lg shadow-blue-200"
         >
           <IconSave size={24} />
         </button>
       </div>
+
+      {/* Equal Button Row - Fixed height */}
       <button
-        onClick={calculateFinal}
-        className="mt-3 w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all"
+        onClick={handleEqual}
+        className="mb-2 w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all shrink-0"
       >
         =
       </button>
@@ -515,9 +475,9 @@ const StandardCalculator = ({ onSave }) => {
   );
 };
 
-const CalcBtn = ({ label, onClick, color = 'default', span = '' }) => {
+const CalcBtn = ({ label, onClick, color = 'default' }) => {
   const baseClass =
-    'h-16 rounded-2xl text-xl font-medium flex items-center justify-center transition-all active:scale-95 select-none';
+    'h-full rounded-2xl text-xl font-medium flex items-center justify-center transition-all active:scale-95 select-none';
   const colors = {
     default:
       'bg-white text-gray-900 shadow-sm border border-gray-100 hover:bg-gray-50',
@@ -527,10 +487,7 @@ const CalcBtn = ({ label, onClick, color = 'default', span = '' }) => {
   };
 
   return (
-    <button
-      onClick={onClick}
-      className={`${baseClass} ${colors[color]} ${span}`}
-    >
+    <button onClick={onClick} className={`${baseClass} ${colors[color]}`}>
       {label}
     </button>
   );
@@ -639,7 +596,7 @@ const SavedList = ({ items, onDelete }) => {
   }
 
   return (
-    <div className="p-6 space-y-4 pb-24">
+    <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-24">
       {items.map((item) => (
         <div
           key={item.id}
