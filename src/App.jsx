@@ -221,7 +221,7 @@ export default function App() {
   };
 
   return (
-    // FIX: Removed max-w-md and mx-auto to make it fully edge-to-edge
+    // Full screen container with no margins
     <div className="h-screen bg-gray-50 flex flex-col font-sans text-gray-800 w-full overflow-hidden relative">
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -395,10 +395,10 @@ const StandardCalculator = ({ onSave }) => {
   };
 
   return (
-    // FIX: Removed padding (p-4) to make it edge-to-edge
+    // Full width container with no internal padding
     <div className="flex flex-col h-full w-full">
-      {/* Display Section - Full width, no rounded corners at top */}
-      <div className="flex-1 flex flex-col justify-end items-end mb-0 space-y-1 bg-white p-6 pb-4 border-b border-gray-100">
+      {/* Display Section: Rectangular, Full Width */}
+      <div className="flex-1 flex flex-col justify-end items-end mb-0 space-y-1 bg-white p-6 pb-4 border-b border-gray-100 w-full">
         <div
           className={`text-right font-light text-gray-800 break-all transition-all ${
             expression.length > 10 ? 'text-4xl' : 'text-5xl'
@@ -411,8 +411,8 @@ const StandardCalculator = ({ onSave }) => {
         </div>
       </div>
 
-      {/* Button Grid - Added small padding only for buttons */}
-      <div className="grid grid-cols-4 gap-1 h-[60%] p-2 bg-gray-50">
+      {/* Button Grid: Removed p-2 to make it edge-to-edge */}
+      <div className="grid grid-cols-4 gap-0.5 h-[60%] bg-gray-100">
         <CalcBtn label="C" onClick={handleClear} color="red" />
         <CalcBtn
           label={<IconUndo size={20} />}
@@ -452,34 +452,32 @@ const StandardCalculator = ({ onSave }) => {
           onClick={() => {
             if (preview) onSave(preview, 'Calculation');
           }}
-          className="bg-blue-600 text-white rounded-2xl text-xl font-medium active:scale-95 transition-transform flex items-center justify-center shadow-lg shadow-blue-200"
+          className="bg-blue-600 text-white text-xl font-medium active:bg-blue-700 transition-colors flex items-center justify-center"
         >
           <IconSave size={24} />
         </button>
       </div>
 
-      {/* Equal Button - Full width in the padded area */}
-      <div className="px-2 pb-2 bg-gray-50">
-        <button
-          onClick={handleEqual}
-          className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all"
-        >
-          =
-        </button>
-      </div>
+      {/* Equal Button: Full width, rectangular */}
+      <button
+        onClick={handleEqual}
+        className="w-full bg-gray-900 text-white py-5 font-bold text-2xl active:bg-gray-800 transition-all shrink-0"
+      >
+        =
+      </button>
     </div>
   );
 };
 
 const CalcBtn = ({ label, onClick, color = 'default' }) => {
   const baseClass =
-    'h-full rounded-2xl text-2xl font-medium flex items-center justify-center transition-all active:scale-95 select-none';
+    'h-full text-2xl font-medium flex items-center justify-center active:opacity-75 select-none transition-colors';
+  // Removed rounding and adjusted colors for a grid look
   const colors = {
-    default:
-      'bg-white text-gray-900 shadow-sm border border-gray-100 hover:bg-gray-50',
-    blue: 'bg-blue-50 text-blue-600 font-bold hover:bg-blue-100',
-    gray: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-    red: 'bg-red-50 text-red-500 hover:bg-red-100',
+    default: 'bg-white text-gray-900',
+    blue: 'bg-blue-50 text-blue-600 font-bold',
+    gray: 'bg-gray-100 text-gray-600',
+    red: 'bg-red-50 text-red-500',
   };
 
   return (
