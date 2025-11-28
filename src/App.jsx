@@ -221,8 +221,8 @@ export default function App() {
   };
 
   return (
-    // Changed h-screen to make it fill specific mobile viewport correctly
-    <div className="h-screen bg-gray-50 flex flex-col font-sans text-gray-800 w-full max-w-md mx-auto shadow-2xl overflow-hidden relative">
+    // FIX: Removed max-w-md and mx-auto to make it fully edge-to-edge
+    <div className="h-screen bg-gray-50 flex flex-col font-sans text-gray-800 w-full overflow-hidden relative">
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -231,7 +231,7 @@ export default function App() {
         body { -webkit-tap-highlight-color: transparent; background-color: #f9fafb; margin: 0; padding: 0; }
       `}</style>
 
-      {/* Main Content Area - Uses flex-1 to fill all available space */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 relative">
         {activeTab === 'standard' && (
           <StandardCalculator onSave={handleInitiateSave} />
@@ -281,7 +281,7 @@ const SaveModal = ({ onConfirm, onCancel }) => {
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+      <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl mx-4">
         <h3 className="text-lg font-bold text-gray-900 mb-2">Save Result</h3>
         <p className="text-sm text-gray-500 mb-4">
           Give this calculation a name.
@@ -326,18 +326,14 @@ const NavButton = ({ active, onClick, icon, label }) => (
 );
 
 const StandardCalculator = ({ onSave }) => {
-  // We use one string 'expression' to hold everything like "45+45"
   const [expression, setExpression] = useState('');
   const [preview, setPreview] = useState('');
   const [history, setHistory] = useState(['']);
   const [historyIndex, setHistoryIndex] = useState(0);
 
-  // Helper to calculate
   const safeCalculate = (exp) => {
     try {
-      // Clean string for eval
       let clean = exp.replace(/×/g, '*').replace(/÷/g, '/');
-      // If ends with operator, trim it for preview
       if (/[+\-*/.]$/.test(clean)) clean = clean.slice(0, -1);
       if (!clean) return '';
       // eslint-disable-next-line no-new-func
@@ -349,7 +345,6 @@ const StandardCalculator = ({ onSave }) => {
     }
   };
 
-  // Update logic with history
   const updateExpression = (newExp) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newExp);
@@ -400,25 +395,24 @@ const StandardCalculator = ({ onSave }) => {
   };
 
   return (
-    <div className="flex flex-col h-full p-4 pb-0">
-      {/* Display Section - Flexible height to push buttons down */}
-      <div className="flex-1 flex flex-col justify-end items-end mb-4 space-y-1 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-        {/* Full Expression (Type here) */}
+    // FIX: Removed padding (p-4) to make it edge-to-edge
+    <div className="flex flex-col h-full w-full">
+      {/* Display Section - Full width, no rounded corners at top */}
+      <div className="flex-1 flex flex-col justify-end items-end mb-0 space-y-1 bg-white p-6 pb-4 border-b border-gray-100">
         <div
           className={`text-right font-light text-gray-800 break-all transition-all ${
-            expression.length > 10 ? 'text-3xl' : 'text-5xl'
+            expression.length > 10 ? 'text-4xl' : 'text-5xl'
           }`}
         >
           {expression || '0'}
         </div>
-        {/* Live Preview Result (Gray text below) */}
         <div className="text-gray-400 text-2xl font-medium h-8">
           {preview ? `= ${preview}` : ''}
         </div>
       </div>
 
-      {/* Button Grid - Uses flex-grow to fill remaining height */}
-      <div className="grid grid-cols-4 gap-2 h-3/5 pb-2">
+      {/* Button Grid - Added small padding only for buttons */}
+      <div className="grid grid-cols-4 gap-1 h-[60%] p-2 bg-gray-50">
         <CalcBtn label="C" onClick={handleClear} color="red" />
         <CalcBtn
           label={<IconUndo size={20} />}
@@ -464,20 +458,22 @@ const StandardCalculator = ({ onSave }) => {
         </button>
       </div>
 
-      {/* Equal Button Row - Fixed height */}
-      <button
-        onClick={handleEqual}
-        className="mb-2 w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all shrink-0"
-      >
-        =
-      </button>
+      {/* Equal Button - Full width in the padded area */}
+      <div className="px-2 pb-2 bg-gray-50">
+        <button
+          onClick={handleEqual}
+          className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all"
+        >
+          =
+        </button>
+      </div>
     </div>
   );
 };
 
 const CalcBtn = ({ label, onClick, color = 'default' }) => {
   const baseClass =
-    'h-full rounded-2xl text-xl font-medium flex items-center justify-center transition-all active:scale-95 select-none';
+    'h-full rounded-2xl text-2xl font-medium flex items-center justify-center transition-all active:scale-95 select-none';
   const colors = {
     default:
       'bg-white text-gray-900 shadow-sm border border-gray-100 hover:bg-gray-50',
