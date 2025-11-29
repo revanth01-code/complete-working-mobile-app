@@ -424,7 +424,7 @@ export default function App() {
   );
 }
 
-// --- Saved List with PDF Download & Clear All ---
+// --- Saved List with ALIGNED Breakdown & PDF Download ---
 const SavedList = ({ items, onDelete, onClearAll }) => {
   const [expandedId, setExpandedId] = useState(null);
 
@@ -469,7 +469,7 @@ const SavedList = ({ items, onDelete, onClearAll }) => {
     doc.setFontSize(12);
 
     let hasCash = false;
-    // SORTING APPLIED: Sort by denomination descending (highest first)
+    // SORTING: Descending order by amount/denomination
     Object.entries(item.details.counts)
       .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
       .forEach(([denom, count]) => {
@@ -604,7 +604,7 @@ const SavedList = ({ items, onDelete, onClearAll }) => {
             </div>
           </div>
 
-          {/* Expanded Breakdown Area */}
+          {/* Expanded Breakdown Area - ALIGNED GRID */}
           {expandedId === item.id && item.details && (
             <div className="bg-gray-50 border-t border-gray-100 p-4 text-sm animate-fade-in">
               <div className="space-y-1 mb-4">
@@ -620,33 +620,38 @@ const SavedList = ({ items, onDelete, onClearAll }) => {
                     return (
                       <div
                         key={denom}
-                        className="flex justify-between text-gray-600"
+                        className="grid grid-cols-3 gap-2 items-center text-gray-700"
                       >
-                        <span>
-                          ₹{denom} <span className="text-gray-400">x</span>{' '}
-                          {val}
+                        {/* Column 1: Note */}
+                        <span className="text-left font-medium">₹{denom}</span>
+                        {/* Column 2: Count */}
+                        <span className="text-center text-gray-400 text-xs">
+                          x {val}
                         </span>
-                        <span className="font-medium">
-                          ₹{(val * parseInt(denom)).toLocaleString()}
+                        {/* Column 3: Total */}
+                        <span className="text-right font-bold">
+                          = ₹{(val * parseInt(denom)).toLocaleString()}
                         </span>
                       </div>
                     );
                   })}
+
                 {/* Loose Cash Display */}
                 {parseInt(item.details.loose) > 0 && (
-                  <div className="flex justify-between text-gray-600">
-                    <span>Loose Cash</span>
-                    <span className="font-medium">
-                      ₹{parseInt(item.details.loose).toLocaleString()}
+                  <div className="grid grid-cols-3 gap-2 items-center text-gray-700 mt-2">
+                    <span className="text-left col-span-2">Loose Cash</span>
+                    <span className="text-right font-bold">
+                      = ₹{parseInt(item.details.loose).toLocaleString()}
                     </span>
                   </div>
                 )}
+
                 {/* Online Display */}
                 {parseInt(item.details.online) > 0 && (
-                  <div className="flex justify-between text-blue-600 mt-2 pt-2 border-t border-gray-200">
-                    <span>Online / UPI</span>
-                    <span className="font-medium">
-                      ₹{parseInt(item.details.online).toLocaleString()}
+                  <div className="grid grid-cols-3 gap-2 items-center text-blue-600 mt-2 pt-2 border-t border-gray-200">
+                    <span className="text-left col-span-2">Online / UPI</span>
+                    <span className="text-right font-bold">
+                      = ₹{parseInt(item.details.online).toLocaleString()}
                     </span>
                   </div>
                 )}
@@ -684,7 +689,7 @@ const CashTallyCalculator = ({ onSave }) => {
     return initial;
   });
   const [onlineAmount, setOnlineAmount] = useState('');
-  const [looseAmount, setLooseAmount] = useState(''); // New State for Loose Cash
+  const [looseAmount, setLooseAmount] = useState('');
   const [cashTotal, setCashTotal] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
 
@@ -694,7 +699,6 @@ const CashTallyCalculator = ({ onSave }) => {
       const val = parseInt(counts[d]) || 0;
       t += val * d;
     });
-    // Add Loose Amount to Cash Total
     const loose = parseInt(looseAmount) || 0;
     t += loose;
 
