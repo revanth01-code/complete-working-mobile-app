@@ -469,9 +469,14 @@ const SavedList = ({ items, onDelete, onClearAll }) => {
     doc.setFontSize(12);
 
     let hasCash = false;
-    // SORTING: Descending order by amount/denomination
+
+    // SORTING APPLIED: Sort by TOTAL AMOUNT (Count * Denom) descending
     Object.entries(item.details.counts)
-      .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+      .sort((a, b) => {
+        const amountA = parseInt(a[0]) * (parseInt(a[1]) || 0);
+        const amountB = parseInt(b[0]) * (parseInt(b[1]) || 0);
+        return amountB - amountA; // Highest amount first
+      })
       .forEach(([denom, count]) => {
         const val = parseInt(count) || 0;
         if (val > 0) {
@@ -611,9 +616,13 @@ const SavedList = ({ items, onDelete, onClearAll }) => {
                 <p className="text-xs font-bold text-gray-400 uppercase mb-2">
                   Breakdown
                 </p>
-                {/* SORTING APPLIED: Sort by denomination descending */}
+                {/* SORTING APPLIED: Sort by TOTAL AMOUNT (Count * Denom) descending */}
                 {Object.entries(item.details.counts)
-                  .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                  .sort((a, b) => {
+                    const amountA = parseInt(a[0]) * (parseInt(a[1]) || 0);
+                    const amountB = parseInt(b[0]) * (parseInt(b[1]) || 0);
+                    return amountB - amountA; // Highest amount first
+                  })
                   .map(([denom, count]) => {
                     const val = parseInt(count) || 0;
                     if (val === 0) return null;
