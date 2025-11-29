@@ -165,41 +165,6 @@ const IconRedo = ({ size = 24, className = '' }) => (
     <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
   </svg>
 );
-const IconSparkles = ({ size = 24, className = '' }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-    <path d="M5 3v4" />
-    <path d="M9 3v4" />
-    <path d="M3 5h4" />
-    <path d="M3 9h4" />
-  </svg>
-);
-const IconSend = ({ size = 24, className = '' }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <line x1="22" y1="2" x2="11" y2="13" />
-    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-  </svg>
-);
 const IconCreditCard = ({ size = 24, className = '' }) => (
   <svg
     width={size}
@@ -247,8 +212,7 @@ const IconMinus = ({ size = 24, className = '' }) => (
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
-// New Icons for Download/Expand
-const IconDownload = ({ size = 24, className = '' }) => (
+const IconFileText = ({ size = 24, className = '' }) => (
   <svg
     width={size}
     height={size}
@@ -260,9 +224,11 @@ const IconDownload = ({ size = 24, className = '' }) => (
     strokeLinejoin="round"
     className={className}
   >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="7 10 12 15 17 10" />
-    <line x1="12" y1="15" x2="12" y2="3" />
+    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
   </svg>
 );
 const IconChevronDown = ({ size = 24, className = '' }) => (
@@ -295,19 +261,48 @@ const IconChevronUp = ({ size = 24, className = '' }) => (
     <path d="m18 15-6-6-6 6" />
   </svg>
 );
+const IconCoins = ({ size = 24, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="8" cy="8" r="6" />
+    <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+    <path d="M7 6h1v4" />
+    <path d="m16.71 13.88.7.71-2.82 2.82" />
+  </svg>
+);
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('standard');
   const [savedItems, setSavedItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [pendingSave, setPendingSave] = useState(null);
 
+  // --- AUTO-FIX: Inject Tailwind CSS & jsPDF ---
   useEffect(() => {
-    const scriptId = 'tailwind-script';
-    if (!document.getElementById(scriptId)) {
+    const tailwindId = 'tailwind-script';
+    if (!document.getElementById(tailwindId)) {
       const script = document.createElement('script');
-      script.id = scriptId;
+      script.id = tailwindId;
       script.src = 'https://cdn.tailwindcss.com';
+      document.head.appendChild(script);
+    }
+
+    const jspdfId = 'jspdf-script';
+    if (!document.getElementById(jspdfId)) {
+      const script = document.createElement('script');
+      script.id = jspdfId;
+      script.src =
+        'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
       document.head.appendChild(script);
     }
   }, []);
@@ -323,7 +318,6 @@ export default function App() {
     localStorage.setItem('calc_saved_items', JSON.stringify(savedItems));
   }, [savedItems]);
 
-  // Updated to accept 'details' parameter
   const handleInitiateSave = (amount, type, details = null) => {
     setPendingSave({ amount, type, details });
     setIsModalOpen(true);
@@ -336,7 +330,7 @@ export default function App() {
         name: name,
         amount: pendingSave.amount,
         type: pendingSave.type,
-        details: pendingSave.details, // Save breakdown details
+        details: pendingSave.details,
         date:
           new Date().toLocaleDateString() +
           ' ' +
@@ -353,6 +347,11 @@ export default function App() {
 
   const deleteItem = (id) => {
     setSavedItems(savedItems.filter((item) => item.id !== id));
+  };
+
+  const handleClearAll = () => {
+    setSavedItems([]);
+    setIsClearModalOpen(false);
   };
 
   return (
@@ -376,15 +375,25 @@ export default function App() {
           <CashTallyCalculator onSave={handleInitiateSave} />
         )}
         {activeTab === 'saved' && (
-          <SavedList items={savedItems} onDelete={deleteItem} />
+          <SavedList
+            items={savedItems}
+            onDelete={deleteItem}
+            onClearAll={() => setIsClearModalOpen(true)}
+          />
         )}
-        {activeTab === 'ai' && <AIAssistant savedItems={savedItems} />}
       </div>
 
       {isModalOpen && (
         <SaveModal
           onConfirm={handleConfirmSave}
           onCancel={() => setIsModalOpen(false)}
+        />
+      )}
+
+      {isClearModalOpen && (
+        <ClearModal
+          onConfirm={handleClearAll}
+          onCancel={() => setIsClearModalOpen(false)}
         />
       )}
 
@@ -408,221 +417,114 @@ export default function App() {
           icon={<IconHistory size={24} />}
           label="Saved"
         />
-        <NavButton
-          active={activeTab === 'ai'}
-          onClick={() => setActiveTab('ai')}
-          icon={<IconSparkles size={24} />}
-          label="AI Help"
-          special
-        />
       </div>
     </div>
   );
 }
 
-// --- Tally Calculator with Breakdown Support ---
-const CashTallyCalculator = ({ onSave }) => {
-  const denominations = [500, 200, 100, 50, 20, 10, 5, 2, 1];
-  const [counts, setCounts] = useState(() => {
-    const initial = {};
-    denominations.forEach((d) => (initial[d] = ''));
-    return initial;
-  });
-  const [onlineAmount, setOnlineAmount] = useState('');
-  const [cashTotal, setCashTotal] = useState(0);
-  const [grandTotal, setGrandTotal] = useState(0);
-
-  useEffect(() => {
-    let t = 0;
-    denominations.forEach((d) => {
-      const val = parseInt(counts[d]) || 0;
-      t += val * d;
-    });
-    setCashTotal(t);
-    const online = parseInt(onlineAmount) || 0;
-    setGrandTotal(t + online);
-  }, [counts, onlineAmount]);
-
-  const handleCountChange = (denom, value) => {
-    if (value === '' || /^\d+$/.test(value)) {
-      setCounts((prev) => ({ ...prev, [denom]: value }));
-    }
-  };
-
-  const adjustCount = (denom, amount) => {
-    const currentVal = parseInt(counts[denom]) || 0;
-    const newVal = Math.max(0, currentVal + amount);
-    setCounts((prev) => ({ ...prev, [denom]: newVal.toString() }));
-  };
-
-  const handleReset = () => {
-    const reset = {};
-    denominations.forEach((d) => (reset[d] = ''));
-    setCounts(reset);
-    setOnlineAmount('');
-  };
-
-  return (
-    <div className="flex flex-col h-full bg-gray-50 w-full relative">
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-48 w-full">
-        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1">
-          Cash Denominations
-        </div>
-        {denominations.map((denom) => {
-          const count = counts[denom];
-          const subtotal = (parseInt(count) || 0) * denom;
-          return (
-            <div
-              key={denom}
-              className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between gap-2"
-            >
-              <div className="w-14 h-10 flex items-center justify-center bg-gray-100 rounded-lg text-gray-700 font-bold font-mono border border-gray-200 shadow-inner text-sm shrink-0">
-                ₹{denom}
-              </div>
-              <div className="flex-1 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => adjustCount(denom, -1)}
-                  className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center active:bg-gray-200 transition-colors"
-                >
-                  <IconMinus size={16} />
-                </button>
-                <input
-                  type="tel"
-                  value={count}
-                  onChange={(e) => handleCountChange(denom, e.target.value)}
-                  placeholder="0"
-                  className="w-12 text-center bg-transparent border-b-2 border-gray-100 focus:border-blue-500 outline-none text-xl text-gray-900 font-medium py-1 transition-colors placeholder-gray-200"
-                />
-                <button
-                  onClick={() => adjustCount(denom, 1)}
-                  className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center active:bg-blue-100 transition-colors"
-                >
-                  <IconPlus size={16} />
-                </button>
-              </div>
-              <div className="w-20 text-right font-bold text-gray-900 text-base shrink-0">
-                {subtotal > 0 ? `₹${subtotal.toLocaleString()}` : '-'}
-              </div>
-            </div>
-          );
-        })}
-        <div className="mt-6">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-2">
-            Digital / Online
-          </div>
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-blue-100 flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center bg-blue-50 rounded-lg text-blue-600 font-bold border border-blue-100 shadow-inner shrink-0">
-              <IconCreditCard size={20} />
-            </div>
-            <div className="flex-1">
-              <label className="text-xs text-gray-400 block mb-1">
-                UPI / Card Total
-              </label>
-              <input
-                type="tel"
-                value={onlineAmount}
-                onChange={(e) => {
-                  if (e.target.value === '' || /^\d+$/.test(e.target.value))
-                    setOnlineAmount(e.target.value);
-                }}
-                placeholder="Enter amount"
-                className="w-full bg-transparent border-b-2 border-transparent focus:border-blue-500 outline-none text-2xl text-gray-900 font-medium p-0 placeholder-gray-200"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-3xl z-10 w-full">
-        <div className="flex justify-between items-center mb-2 px-1 text-xs font-medium text-gray-500">
-          <span>Cash: ₹{cashTotal.toLocaleString()}</span>
-          <span>+</span>
-          <span>Online: ₹{parseInt(onlineAmount || 0).toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-end mb-4 px-1">
-          <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">
-              Grand Total
-            </div>
-            <div className="text-4xl font-bold text-gray-900 tracking-tight">
-              ₹{grandTotal.toLocaleString()}
-            </div>
-          </div>
-          <button
-            onClick={handleReset}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-          >
-            <IconRefreshCw size={20} />
-          </button>
-        </div>
-        <button
-          onClick={() =>
-            onSave(
-              `Grand Total: ₹${grandTotal.toLocaleString()}`,
-              'Cash Tally',
-              // Passing detailed breakdown here
-              { counts, online: onlineAmount, cashTotal, grandTotal }
-            )
-          }
-          disabled={grandTotal === 0}
-          className="w-full bg-blue-600 disabled:bg-gray-300 disabled:shadow-none text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all flex items-center justify-center gap-2"
-        >
-          <IconSave size={20} />
-          Save Tally
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// --- Updated Saved List with Breakdown & Download ---
-const SavedList = ({ items, onDelete }) => {
+// --- Saved List with PDF Download & Clear All ---
+const SavedList = ({ items, onDelete, onClearAll }) => {
   const [expandedId, setExpandedId] = useState(null);
 
   const toggleExpand = (id) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const handleDownload = (item) => {
+  const handleDownloadPDF = (item) => {
     if (!item.details) return;
 
-    // Construct receipt text
-    let text = `CASH TALLY RECEIPT\n`;
-    text += `Date: ${item.date}\n`;
-    text += `Name: ${item.name}\n`;
-    text += `----------------------\n`;
+    if (!window.jspdf) {
+      alert(
+        'PDF generator is still loading. Please wait a moment and try again.'
+      );
+      return;
+    }
 
-    // Cash Details
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // -- PDF Design --
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.text('CASH TALLY RECEIPT', 105, 20, null, null, 'center');
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${item.date}`, 20, 35);
+    doc.text(`Name: ${item.name}`, 20, 42);
+
+    doc.setLineWidth(0.5);
+    doc.line(20, 48, 190, 48);
+
+    // List Cash
+    let yPos = 60;
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Cash Breakdown', 20, yPos);
+    yPos += 10;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+
     let hasCash = false;
     Object.entries(item.details.counts).forEach(([denom, count]) => {
       const val = parseInt(count) || 0;
       if (val > 0) {
         hasCash = true;
-        text += `₹${denom} x ${val} = ₹${(
-          val * parseInt(denom)
-        ).toLocaleString()}\n`;
+        const total = (val * parseInt(denom)).toLocaleString();
+        doc.text(`${denom}`, 20, yPos);
+        doc.text(`x ${val}`, 80, yPos);
+        doc.text(`=  ${total}`, 150, yPos);
+        yPos += 8;
       }
     });
-    if (!hasCash) text += 'No Cash\n';
 
-    text += `----------------------\n`;
-    text += `Cash Total:   ₹${item.details.cashTotal.toLocaleString()}\n`;
-    text += `Online Total: ₹${parseInt(
-      item.details.online || 0
-    ).toLocaleString()}\n`;
-    text += `======================\n`;
-    text += `GRAND TOTAL:  ₹${item.details.grandTotal.toLocaleString()}\n`;
+    if (!hasCash) {
+      doc.text('No notes tallied.', 20, yPos);
+      yPos += 8;
+    }
 
-    // Trigger download
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${item.name.replace(/\s+/g, '_')}_receipt.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Loose Cash in PDF
+    const loose = parseInt(item.details.loose) || 0;
+    if (loose > 0) {
+      doc.text(`Loose Cash:`, 20, yPos);
+      doc.text(`${loose.toLocaleString()}`, 150, yPos);
+      yPos += 8;
+    }
+
+    yPos += 5;
+    doc.line(20, yPos, 190, yPos);
+    yPos += 10;
+
+    // Totals
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Cash Total:`, 100, yPos);
+    doc.text(`${item.details.cashTotal.toLocaleString()}`, 150, yPos);
+    yPos += 8;
+
+    doc.text(`Online Total:`, 100, yPos);
+    doc.text(
+      `${parseInt(item.details.online || 0).toLocaleString()}`,
+      150,
+      yPos
+    );
+    yPos += 12; // Extra space before grand total
+
+    // Grand Total Box
+    doc.setDrawColor(0);
+    doc.setFillColor(240, 240, 240);
+    doc.rect(95, yPos - 8, 80, 14, 'F'); // Highlight box
+    doc.setFontSize(14);
+    doc.text(`GRAND TOTAL:`, 100, yPos);
+    doc.text(`${item.details.grandTotal.toLocaleString()}`, 150, yPos);
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('Generated by Cash Tally App', 105, 280, null, null, 'center');
+
+    // Save
+    doc.save(`${item.name.replace(/\s+/g, '_')}_receipt.pdf`);
   };
 
   if (items.length === 0)
@@ -635,6 +537,19 @@ const SavedList = ({ items, onDelete }) => {
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-24 w-full">
+      {/* Clear All Header */}
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+          History
+        </h3>
+        <button
+          onClick={onClearAll}
+          className="text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1 active:scale-95"
+        >
+          <IconTrash2 size={14} /> Clear All
+        </button>
+      </div>
+
       {items.map((item) => (
         <div
           key={item.id}
@@ -708,6 +623,16 @@ const SavedList = ({ items, onDelete }) => {
                     </div>
                   );
                 })}
+                {/* Loose Cash Display */}
+                {parseInt(item.details.loose) > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Loose Cash</span>
+                    <span className="font-medium">
+                      ₹{parseInt(item.details.loose).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {/* Online Display */}
                 {parseInt(item.details.online) > 0 && (
                   <div className="flex justify-between text-blue-600 mt-2 pt-2 border-t border-gray-200">
                     <span>Online / UPI</span>
@@ -720,16 +645,17 @@ const SavedList = ({ items, onDelete }) => {
 
               <div className="flex gap-3 mt-4 pt-3 border-t border-gray-200">
                 <button
-                  onClick={() => handleDownload(item)}
-                  className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-xl text-xs font-bold hover:bg-gray-50 active:scale-95 transition-all"
+                  onClick={() => handleDownloadPDF(item)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 active:scale-95 transition-all shadow-sm"
                 >
-                  <IconDownload size={16} /> Download Receipt
+                  <IconFileText size={18} className="text-red-500" /> Save as
+                  PDF
                 </button>
                 <button
                   onClick={() => onDelete(item.id)}
-                  className="flex items-center justify-center w-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 active:scale-95 transition-all"
+                  className="flex items-center justify-center w-12 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 active:scale-95 transition-all"
                 >
-                  <IconTrash2 size={18} />
+                  <IconTrash2 size={20} />
                 </button>
               </div>
             </div>
@@ -740,144 +666,196 @@ const SavedList = ({ items, onDelete }) => {
   );
 };
 
-// --- AI Assistant ---
-const AIAssistant = ({ savedItems }) => {
-  const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const resultRef = useRef(null);
+// --- Tally Calculator with Online & Loose Cash Section ---
+const CashTallyCalculator = ({ onSave }) => {
+  const denominations = [500, 200, 100, 50, 20, 10, 5, 2, 1];
+  const [counts, setCounts] = useState(() => {
+    const initial = {};
+    denominations.forEach((d) => (initial[d] = ''));
+    return initial;
+  });
+  const [onlineAmount, setOnlineAmount] = useState('');
+  const [looseAmount, setLooseAmount] = useState(''); // New State for Loose Cash
+  const [cashTotal, setCashTotal] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
 
-  const handleAskAI = async (customPrompt = null) => {
-    const textToAsk = customPrompt || prompt;
-    if (!textToAsk.trim()) return;
+  useEffect(() => {
+    let t = 0;
+    denominations.forEach((d) => {
+      const val = parseInt(counts[d]) || 0;
+      t += val * d;
+    });
+    // Add Loose Amount to Cash Total
+    const loose = parseInt(looseAmount) || 0;
+    t += loose;
 
-    setLoading(true);
-    setResponse('');
-    setError(null);
+    setCashTotal(t);
+    const online = parseInt(onlineAmount) || 0;
+    setGrandTotal(t + online);
+  }, [counts, onlineAmount, looseAmount]);
 
-    let finalPrompt = textToAsk;
-    if (customPrompt && savedItems.length > 0) {
-      finalPrompt = `${textToAsk} Here is the data: ${JSON.stringify(
-        savedItems
-      )}. Summarize the total amount, grouping by names if possible.`;
-    }
-
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: finalPrompt }] }],
-        }),
-      });
-
-      if (!res.ok) throw new Error('Failed to fetch from Gemini');
-      const data = await res.json();
-      const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (aiText) setResponse(aiText);
-      else throw new Error('No response text found');
-    } catch (err) {
-      console.error(err);
-      setError('AI is currently unavailable. Please try again later.');
-    } finally {
-      setLoading(false);
+  const handleCountChange = (denom, value) => {
+    if (value === '' || /^\d+$/.test(value)) {
+      setCounts((prev) => ({ ...prev, [denom]: value }));
     }
   };
 
-  useEffect(() => {
-    if (response && resultRef.current)
-      resultRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [response]);
+  const adjustCount = (denom, amount) => {
+    const currentVal = parseInt(counts[denom]) || 0;
+    const newVal = Math.max(0, currentVal + amount);
+    setCounts((prev) => ({ ...prev, [denom]: newVal.toString() }));
+  };
+
+  const handleReset = () => {
+    const reset = {};
+    denominations.forEach((d) => (reset[d] = ''));
+    setCounts(reset);
+    setOnlineAmount('');
+    setLooseAmount('');
+  };
 
   return (
-    <div className="flex flex-col h-full bg-white w-full">
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 pb-8 text-white shrink-0">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <IconSparkles size={24} className="text-yellow-300" /> AI Assistant
-        </h2>
-        <p className="text-purple-100 text-sm mt-1">
-          Ask math questions or analyze your history.
-        </p>
-      </div>
+    <div className="flex flex-col h-full bg-gray-50 w-full relative">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-48 w-full">
+        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1">
+          Cash Denominations
+        </div>
+        {denominations.map((denom) => {
+          const count = counts[denom];
+          const subtotal = (parseInt(count) || 0) * denom;
+          return (
+            <div
+              key={denom}
+              className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between gap-2"
+            >
+              <div className="w-14 h-10 flex items-center justify-center bg-gray-100 rounded-lg text-gray-700 font-bold font-mono border border-gray-200 shadow-inner text-sm shrink-0">
+                ₹{denom}
+              </div>
+              <div className="flex-1 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => adjustCount(denom, -1)}
+                  className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center active:bg-gray-200 transition-colors"
+                >
+                  <IconMinus size={16} />
+                </button>
+                <input
+                  type="tel"
+                  value={count}
+                  onChange={(e) => handleCountChange(denom, e.target.value)}
+                  placeholder="0"
+                  className="w-12 text-center bg-transparent border-b-2 border-gray-100 focus:border-blue-500 outline-none text-xl text-gray-900 font-medium py-1 transition-colors placeholder-gray-200"
+                />
+                <button
+                  onClick={() => adjustCount(denom, 1)}
+                  className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center active:bg-blue-100 transition-colors"
+                >
+                  <IconPlus size={16} />
+                </button>
+              </div>
+              <div className="w-20 text-right font-bold text-gray-900 text-base shrink-0">
+                {subtotal > 0 ? `₹${subtotal.toLocaleString()}` : '-'}
+              </div>
+            </div>
+          );
+        })}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 -mt-4 rounded-t-3xl bg-white w-full">
-        {savedItems.length > 0 && !response && (
-          <button
-            onClick={() =>
-              handleAskAI('Analyze my saved history and give me a summary.')
-            }
-            className="w-full bg-purple-50 text-purple-700 p-4 rounded-2xl flex items-center justify-between border border-purple-100 hover:bg-purple-100 transition-colors shadow-sm"
-          >
-            <span className="font-medium">✨ Analyze Saved History</span>
-            <IconSparkles size={20} />
-          </button>
-        )}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-400 space-y-2">
-            <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-medium">Thinking...</p>
+        {/* Loose Amount Section */}
+        <div className="mt-4">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-2">
+            Loose Cash
           </div>
-        )}
-        {response && (
-          <div
-            ref={resultRef}
-            className="bg-gray-50 p-5 rounded-2xl border border-gray-100 animate-fade-in shadow-sm"
-          >
-            <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-1">
-              <IconSparkles size={12} /> Gemini says:
-            </h3>
-            <div className="prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap leading-relaxed">
-              {response}
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-orange-100 flex items-center gap-4">
+            <div className="w-12 h-12 flex items-center justify-center bg-orange-50 rounded-lg text-orange-500 font-bold border border-orange-100 shadow-inner shrink-0">
+              <IconCoins size={20} />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 block mb-1">
+                Coins / Misc
+              </label>
+              <input
+                type="tel"
+                value={looseAmount}
+                onChange={(e) => {
+                  if (e.target.value === '' || /^\d+$/.test(e.target.value))
+                    setLooseAmount(e.target.value);
+                }}
+                placeholder="Enter amount"
+                className="w-full bg-transparent border-b-2 border-transparent focus:border-orange-500 outline-none text-2xl text-gray-900 font-medium p-0 placeholder-gray-200"
+              />
             </div>
           </div>
-        )}
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100">
-            {error}
+        </div>
+
+        {/* Online Section */}
+        <div className="mt-4">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-2">
+            Digital / Online
           </div>
-        )}
-        {!response && !loading && (
-          <div className="space-y-2 mt-4">
-            <p className="text-xs font-bold text-gray-400 uppercase ml-1">
-              Try asking:
-            </p>
-            <button
-              onClick={() => setPrompt('Convert 100 USD to INR')}
-              className="block w-full text-left bg-white border border-gray-200 p-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
-            >
-              "Convert 100 USD to INR"
-            </button>
-            <button
-              onClick={() => setPrompt('Split 2500 among 4 people')}
-              className="block w-full text-left bg-white border border-gray-200 p-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
-            >
-              "Split 2500 among 4 people"
-            </button>
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-blue-100 flex items-center gap-4">
+            <div className="w-12 h-12 flex items-center justify-center bg-blue-50 rounded-lg text-blue-600 font-bold border border-blue-100 shadow-inner shrink-0">
+              <IconCreditCard size={20} />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 block mb-1">
+                UPI / Card Total
+              </label>
+              <input
+                type="tel"
+                value={onlineAmount}
+                onChange={(e) => {
+                  if (e.target.value === '' || /^\d+$/.test(e.target.value))
+                    setOnlineAmount(e.target.value);
+                }}
+                placeholder="Enter amount"
+                className="w-full bg-transparent border-b-2 border-transparent focus:border-blue-500 outline-none text-2xl text-gray-900 font-medium p-0 placeholder-gray-200"
+              />
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="p-4 border-t border-gray-100 bg-white shrink-0">
-        <div className="flex gap-2 relative">
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-            placeholder="Ask anything..."
-            className="w-full bg-gray-100 text-gray-800 rounded-2xl py-4 pl-5 pr-14 outline-none focus:ring-2 focus:ring-purple-100 transition-all"
-          />
+      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-3xl z-10 w-full">
+        <div className="flex justify-between items-center mb-2 px-1 text-xs font-medium text-gray-500">
+          <span>Cash: ₹{cashTotal.toLocaleString()}</span>
+          <span>+</span>
+          <span>Online: ₹{parseInt(onlineAmount || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-end mb-4 px-1">
+          <div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+              Grand Total
+            </div>
+            <div className="text-4xl font-bold text-gray-900 tracking-tight">
+              ₹{grandTotal.toLocaleString()}
+            </div>
+          </div>
           <button
-            onClick={() => handleAskAI()}
-            disabled={!prompt.trim() || loading}
-            className="absolute right-2 top-2 bottom-2 bg-purple-600 text-white p-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors shadow-md"
+            onClick={handleReset}
+            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
           >
-            <IconSend size={20} />
+            <IconRefreshCw size={20} />
           </button>
         </div>
+        <button
+          onClick={() =>
+            onSave(
+              `Grand Total: ₹${grandTotal.toLocaleString()}`,
+              'Cash Tally',
+              {
+                counts,
+                online: onlineAmount,
+                loose: looseAmount,
+                cashTotal,
+                grandTotal,
+              }
+            )
+          }
+          disabled={grandTotal === 0}
+          className="w-full bg-blue-600 disabled:bg-gray-300 disabled:shadow-none text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+        >
+          <IconSave size={20} />
+          Save Tally
+        </button>
       </div>
     </div>
   );
@@ -1059,6 +1037,32 @@ const SaveModal = ({ onConfirm, onCancel }) => {
     </div>
   );
 };
+
+const ClearModal = ({ onConfirm, onCancel }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl mx-4">
+      <h3 className="text-lg font-bold text-gray-900 mb-2">Clear History?</h3>
+      <p className="text-sm text-gray-500 mb-6">
+        This will permanently delete all your saved calculations. This action
+        cannot be undone.
+      </p>
+      <div className="flex gap-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onConfirm}
+          className="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-red-200 active:scale-95 transition-all"
+        >
+          Delete All
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const NavButton = ({ active, onClick, icon, label, special }) => (
   <button
