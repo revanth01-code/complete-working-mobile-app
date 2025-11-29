@@ -289,6 +289,7 @@ export default function App() {
 
   // --- AUTO-FIX: Inject Tailwind CSS & jsPDF ---
   useEffect(() => {
+    // Inject Tailwind
     const tailwindId = 'tailwind-script';
     if (!document.getElementById(tailwindId)) {
       const script = document.createElement('script');
@@ -297,6 +298,7 @@ export default function App() {
       document.head.appendChild(script);
     }
 
+    // Inject jsPDF for PDF generation
     const jspdfId = 'jspdf-script';
     if (!document.getElementById(jspdfId)) {
       const script = document.createElement('script');
@@ -467,17 +469,20 @@ const SavedList = ({ items, onDelete, onClearAll }) => {
     doc.setFontSize(12);
 
     let hasCash = false;
-    Object.entries(item.details.counts).forEach(([denom, count]) => {
-      const val = parseInt(count) || 0;
-      if (val > 0) {
-        hasCash = true;
-        const total = (val * parseInt(denom)).toLocaleString();
-        doc.text(`${denom}`, 20, yPos);
-        doc.text(`x ${val}`, 80, yPos);
-        doc.text(`=  ${total}`, 150, yPos);
-        yPos += 8;
-      }
-    });
+    // SORTING APPLIED: Sort by denomination descending (highest first)
+    Object.entries(item.details.counts)
+      .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+      .forEach(([denom, count]) => {
+        const val = parseInt(count) || 0;
+        if (val > 0) {
+          hasCash = true;
+          const total = (val * parseInt(denom)).toLocaleString();
+          doc.text(`${denom}`, 20, yPos);
+          doc.text(`x ${val}`, 80, yPos);
+          doc.text(`=  ${total}`, 150, yPos);
+          yPos += 8;
+        }
+      });
 
     if (!hasCash) {
       doc.text('No notes tallied.', 20, yPos);
@@ -606,23 +611,27 @@ const SavedList = ({ items, onDelete, onClearAll }) => {
                 <p className="text-xs font-bold text-gray-400 uppercase mb-2">
                   Breakdown
                 </p>
-                {Object.entries(item.details.counts).map(([denom, count]) => {
-                  const val = parseInt(count) || 0;
-                  if (val === 0) return null;
-                  return (
-                    <div
-                      key={denom}
-                      className="flex justify-between text-gray-600"
-                    >
-                      <span>
-                        ₹{denom} <span className="text-gray-400">x</span> {val}
-                      </span>
-                      <span className="font-medium">
-                        ₹{(val * parseInt(denom)).toLocaleString()}
-                      </span>
-                    </div>
-                  );
-                })}
+                {/* SORTING APPLIED: Sort by denomination descending */}
+                {Object.entries(item.details.counts)
+                  .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                  .map(([denom, count]) => {
+                    const val = parseInt(count) || 0;
+                    if (val === 0) return null;
+                    return (
+                      <div
+                        key={denom}
+                        className="flex justify-between text-gray-600"
+                      >
+                        <span>
+                          ₹{denom} <span className="text-gray-400">x</span>{' '}
+                          {val}
+                        </span>
+                        <span className="font-medium">
+                          ₹{(val * parseInt(denom)).toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  })}
                 {/* Loose Cash Display */}
                 {parseInt(item.details.loose) > 0 && (
                   <div className="flex justify-between text-gray-600">
